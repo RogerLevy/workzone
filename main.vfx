@@ -1,0 +1,29 @@
++sin  \ enable tokenization of all definitions from here
+
+require config/options.vfx
+require config/allegro.vfx
+
+cwd vfxland3
+require lib/vl3/vfxland3.vfx
+require lib/csv.vfx
+require plugins/engine1.vfx
+require plugins/bitmaps2.vfx
+require lib/files1.vfx
+require plugins/obj2.vfx
+cwd ..
+
+include lib/str.vfx
+require lib/array.vfx
+require lib/timer.vfx
+require lib/ranges.vfx
+include lib/extra.vfx
+
+-sin  \ disable tokenization of all definitions from here
+
+\ ------------------------------------------------------------------------------
+
+include workzone.vfx
+
+\ ------------------------------------------------------------------------------
+
+home use-mode go

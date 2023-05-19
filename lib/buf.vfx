@@ -1,0 +1,13 @@
+
+\ : RESIZE ( addr n -- addr ior )
+\   OVER GlobalSize                    \ addr n len
+\   DUP 0= IF  2DROP -1 EXIT  THEN          \ addr n len
+\   OVER ALLOCATE                      \ addr n len addr ior
+\   DUP IF  NIP NIP NIP EXIT THEN DROP        \ addr n len addr
+\   >R MIN  OVER R@ ROT CMOVE
+\   FREE DROP R> 0 ;
+\   
+\ : /buf  ( size - ) dup len ! allocate throw buf ! ;
+\ : +buf  ( size - ) buf @ swap resize throw buf ! ;
+\ : >buf  buf @ + ;
+\ : insert  ( a size ofs - ) 2dup +
