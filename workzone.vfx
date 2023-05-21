@@ -1,5 +1,29 @@
+\ ------------------------------------------------------------------------------
+
+: bit  dup constant  1 lshift ;
+
+\ attributes
+1
+bit AUTOPOS#    \ auto-positioned element
+bit VISIBLE#    \ contents visible when not in edit mode
+bit EDITABLE#   \ contents and data can be modified in edit mode
+bit FIXED#     \ cannot be moved or resized in edit mode
+bit LOCKED#    \ cannot be deleted
+bit UTILITY#    \ cannot be inspected or serialized
+drop
+
+\ static attributes
+1
+bit MODULE#
+bit PARENT#
+bit MODULE#
+drop
+
+\ ------------------------------------------------------------------------------
+
 variable editing
 create viewport  0 , 0 , 1920 , 1080 ,
+0 value workspace    \ defines the "root" module for display and user interaction
 
 \ ------------------------------------------------------------------------------
 
@@ -28,30 +52,13 @@ method mousewheel ( n -- )
 
 \ ------------------------------------------------------------------------------
 
-%element m: charkey  drop ;
-%element m: mousewheel  ;
+%element m: init  VISIBLE# attr ! ;
 %element m: dodrag  mdelta x v+! ;
-
-\ ------------------------------------------------------------------------------
-
-: bit  dup constant  1 lshift ;
-
-\ attributes
-1
-bit AUTOPOS#    \ auto-positioned element
-bit VISIBLE#    \ contents visible when not in edit mode
-bit EDITABLE#   \ contents and data can be modified in edit mode
-bit FIXED#     \ cannot be moved or resized in edit mode
-bit LOCKED#    \ cannot be deleted
-bit UTILITY#    \ cannot be inspected or serialized
-drop
-
-\ static attributes
-1
-bit MODULE#
-bit PARENT#
-bit MODULE#
-drop
+%element m: charkey  drop ;
+%element m: mousedown  ;
+%element m: rmousedown  ;
+%element m: mousewheel  drop ;
+%element m: click  ;
 
 \ ------------------------------------------------------------------------------
 
@@ -116,17 +123,20 @@ default-stack to settings
 
 \ ------------------------------------------------------------------------------
 
-: broadcast  ( xt - ) me each ;
-: >local  x v@ 2-  begin  parent @ ?dup while  dup >r -> x v@ 2-  r>  repeat ;
-: >global  x v@ 2+  begin  parent @ ?dup while  dup >r -> x v@ 2+  r>  repeat ;
+0 value  (xt)
+: (broadcast)  (xt) execute  me each> recurse ; 
+: broadcast  ( xt - ) (xt) >r  to (xt)  workspace [[ (broadcast) ]]  r> to (xt) ;
+: >local  x v@ 2-  parent @ ?dup if [[ recurse ]] then ;
+: >global  x v@ 2+  parent @ ?dup if [[ recurse ]] then ;
 : at-span  x v@ at ;
 
 \ ------------------------------------------------------------------------------
 
 : is-visible?  -> attr @ VISIBLE# and 0<> ;
-: shown?  attr @ VISIBLE# and editing @ 0= and ;
+: shown?  attr @ VISIBLE# and editing @ 0= and 0<> ;
 : in-viewport?  -1 ; \ mouse 2dup viewport box@ overlap? ;
-: hovering?  mouse >local x v@ w v@ 2over 2+ overlap?  in-viewport? and ;
+: hovering?  mouse 2 / swap 2 / swap >local 2dup x v@ w v@ 2over 2+ overlap?
+   in-viewport? and ;
 : parent?  kind @ -> cattr @ PARENT# and 0<> ;
 : module?  kind @ -> cattr @ MODULE# and 0<> ;
 : clickable?  shown? not if  0  exit then  parent? ?dup ?exit hovering? ;
@@ -177,10 +187,7 @@ PARENT# MODULE# or %module cattr !
 
 \ ------------------------------------------------------------------------------
 
-0 value workspace    \ defines the "root" module for display and user interaction
-0 value module       \ current module for declaring elements and fields
-
-: switch  dup to module  to workspace ; 
+: switch  dup in  to workspace ; 
 
 : create-workspace ( -- <name> )  ( -- )
     create %module static,  me switch  does> switch ;
@@ -197,20 +204,15 @@ PARENT# MODULE# or %module cattr !
         next @ as
     repeat  ]]  false ;
 
-: create-named  ( kind -- <name> )
-    create  one as  does>  module swap body> >name count lookup ;
+: named-element  ( -- <name> )
+    create  does>  joan swap body> >name count lookup ;
 
 : figure[  ( module -- ws old-module )
-    workspace module  push-settings  rot switch ;
+    workspace joan  push-settings  rot switch ;
 
 : ]figure  ( ws old-module -- )
-    pop-settings  to module to workspace   ;
+    pop-settings  in  to workspace ;
 
-\ %module m: draw         ['] ?draw       (each) ;
-%module m: mousedown    ['] ?mousedown  (each) ;
-%module m: rmousedown   ['] ?rmousedown (each) ;
-%module m: mousewheel   ['] ?mousewheel (each) drop ;
-%module m: click        ['] ?click      (each) ;
 
 \ : load-prototype-figure ( -- )
 \    module init-region   module-class @ >prototype   module   copy-figure ;
@@ -221,7 +223,7 @@ PARENT# MODULE# or %module cattr !
 \ ------------------------------------------------------------------------------
 
 root in
-create workzone  %actor static,
+create workzone  %element static,
 
 0 in
 create-workspace editor
@@ -261,23 +263,6 @@ create palette
 : sf@+  dup cell+ swap sf@ ;
 : 4sf@  sf@+ sf@+ sf@+ sf@+ drop ;
 : fcolor ( n -- f: r g b a ) 4 cells * palette + 4sf@ ;
-: fwhite  1e 1e 1e 1e ;
-: fblack  0e 0e 0e 1e ;
-
-\ ------------------------------------------------------------------------------
-
-: draw-button  ( addr c -- )
-  w v@  hovering? if  white  rectf  black
-          else  black 2dup rectf  white rect  then
-  8 8 +at  text ;
-
-: sized  ( x y -- ) size.x v! ;
-: +sized  ( x y -- ) size.x v+! ;
-: fgcolor  (fgcolor) ! ;
-: bgcolor  (bgcolor) ! ;
-: strsize  ( zaddr -- w h ) strwidth fontheight ;
-: fitstr  ( zaddr -- zaddr ) dup strsize sized ;
-: button-sized  ( zaddr -- zaddr ) fitstr 16 16 +sized ;
 
 \ ------------------------------------------------------------------------------
 \ mouse

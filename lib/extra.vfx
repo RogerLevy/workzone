@@ -5,7 +5,7 @@
 \ ------------------------------------------------------------------------------
 \ from rat.vfx:
 
-0 fvalue flen
+0e fvalue flen
 : fuvec ( f: deg -- f: x y )  deg>rad fdup fcos fswap fsin ;
 : fvec  ( f: deg len -- f: x y )  to flen  fuvec  flen f* fswap flen f* fswap ;
 
@@ -48,17 +48,21 @@ create fgc  1e sf, 1e sf, 1e sf, 1e sf,
 variable font
 
 : f@+  dup sf@ cell+ ;
-: f!+  dup sf! cell+ ;
+: f!-  dup sf! cell- ;
 : fgc@  fgc f@+ f@+ f@+ f@+ drop ;
-: fgc!  fgc f!+ f!+ f!+ f!+ drop ;
+: fgc!  fgc 3 cells + f!- f!- f!- f!- drop ;
 
-: text  >r  font @  fgc@  at@f  0 r> al_draw_text ;
+: text  ( zaddr - ) >r  font @  fgc@  at@f  0 r> al_draw_text ;
 
-: rect  at@f  swap s>f swap s>f  fgc@  1e al_draw_rectangle ;
-: rectf  at@f  swap s>f swap s>f  fgc@  al_draw_filled_rectangle ;
+variable (f)
+: f>i  (f) sf!  (f) @ ;
+
+: rect  at@f  swap s>f s>f  1e f>i  fgc@  al_draw_rectangle ;
+: rectf  at@f  swap s>f s>f  fgc@  al_draw_filled_rectangle ;
 
 : white  1e 1e 1e 1e fgc! ;
-: black  0e 0e 0e 0e fgc! ;
+: black  0e 0e 0e 1e fgc! ;
 
 : strwidth  font @ swap al_get_text_width ;
 : fontheight  font @ al_get_font_line_height ;
+

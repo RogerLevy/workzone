@@ -1,7 +1,7 @@
 \ ------------------------------------------------------------------------------
 
-%element kind: %input
-   var buf var len
+%element kind: %text
+   var buf
 ;kind
 
 \ ------------------------------------------------------------------------------
@@ -10,5 +10,40 @@ z" Px437_IBM_BIOS.ttf" 8 0 al_load_font constant ibm.font
 
 \ ------------------------------------------------------------------------------
 
-%input m: init
+%text m: init
    draw> ibm.font font !  z" This is a test" text ;
+
+\ ------------------------------------------------------------------------------
+
+: fwhite  1e 1e 1e 1e ;
+: fblack  0e 0e 0e 1e ;
+
+\ ------------------------------------------------------------------------------
+
+: strsize  ( zaddr -- w h ) strwidth fontheight ;
+: fitstr  ( zaddr -- ) strsize w v! ;
+: !button-size  ( zaddr -- ) fitstr 16 16 w v+! ;
+
+\ ------------------------------------------------------------------------------
+
+ibm.font font !
+
+: draw-button  ( zaddr -- )
+   w v@
+   hovering? if  white  rectf  black
+      else  black  2dup rectf  white rect  then
+   8 8 +at  text ;
+
+: zstring,  here dup buf !  >r dup allot  r> swap move  0 c, ;
+
+\ ------------------------------------------------------------------------------
+
+
+%text kind: %code
+   dup m: draw  buf @ !button-size  at-span  buf @ draw-button ;
+   dup m: mousedown  buf @  zcount evaluate ;
+;kind
+
+\ [code] <code>
+: [code]  %code static,  0 parse zstring, ;
+

@@ -12,18 +12,24 @@ require lib/files1.vfx
 require plugins/obj2.vfx
 cwd ..
 
-include lib/str.vfx
+require lib/str.vfx
 require lib/array.vfx
 require lib/timer.vfx
 require lib/ranges.vfx
-include lib/extra.vfx
+require lib/extra.vfx
 
 -sin  \ disable tokenization of all definitions from here
 
 \ ------------------------------------------------------------------------------
 
 include workzone.vfx
+include standard.vfx
 
 \ ------------------------------------------------------------------------------
 
-home use-mode go
+: hi  cr ." HI!!!" ;
+
+home  
+create code  [code] hi
+use-mode
+go
